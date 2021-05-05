@@ -73,7 +73,7 @@ class Snipe
         $storageLocation = config('snipe.snapshot-location');
 
         // Store a snapshot of the db after migrations run.
-        $this->execute('mysqldump', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} {$this->getDbName()} > {$storageLocation}");
+        $this->execute('mysqldump', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} --routines  {$this->getDbName()} > {$storageLocation}");
     }
 
     /**
