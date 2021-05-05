@@ -16,7 +16,6 @@ class Snipe
             // Does not handle in memory databases yet.
             return;
         }
-
         $this->databaseFileChanges()
             ? $this->newSnapshot()
             : $this->importDatabase();
@@ -42,7 +41,7 @@ class Snipe
      */
     protected function databaseFileChanges()
     {
-        if (! SnipeDatabaseState::$checkedForDatabaseFileChanges) {
+        if (!SnipeDatabaseState::$checkedForDatabaseFileChanges) {
             $timeSum = config('snipe.seed-database', false)
                 ? $this->migrationFileTimeSum() + $this->seederFileTimeSum()
                 : $this->migrationFileTimeSum();
@@ -74,7 +73,7 @@ class Snipe
         $storageLocation = config('snipe.snapshot-location');
 
         // Store a snapshot of the db after migrations run.
-        $this->execute('mysqldump', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} {$this->getDbName()} > {$storageLocation} 2>/dev/null");
+        $this->execute('mysqldump', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} {$this->getDbName()} > {$storageLocation}");
     }
 
     /**
@@ -119,7 +118,7 @@ class Snipe
      */
     protected function databaseFilesHaveChanged($timeSum): bool
     {
-        if (! file_exists(config('snipe.snapshot-location'))) {
+        if (!file_exists(config('snipe.snapshot-location'))) {
             return true;
         }
 
@@ -127,7 +126,7 @@ class Snipe
 
         $storedTimeSum = file_exists($snipeFile) ? file_get_contents($snipeFile) : 0;
 
-        return (int) $storedTimeSum !== $timeSum;
+        return (bool) ((string) $storedTimeSum !== (string) $timeSum);
     }
 
     /**
@@ -135,10 +134,9 @@ class Snipe
      */
     protected function importDatabase()
     {
-        if (! SnipeDatabaseState::$importedDatabase) {
+        if (!SnipeDatabaseState::$importedDatabase) {
             $dumpfile = config('snipe.snapshot-location');
-
-            $this->execute('mysql', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} {$this->getDbName()} < {$dumpfile} 2>/dev/null");
+            $this->execute('mysql', "-h {$this->getDbHost()} -u {$this->getDbUsername()} --password={$this->getDbPassword()} {$this->getDbName()} < {$dumpfile}");
 
             SnipeDatabaseState::$importedDatabase = true;
         }
@@ -214,6 +212,22 @@ class Snipe
     }
 
     /**
+     * Returns the redirection for the executing OS.
+     *
+     * @return string
+     */
+    protected function getOutputRedirection()
+    {
+        $isWindows = (stripos(PHP_OS, 'WIN') === 0);
+
+        if ($isWindows) {
+            return "2> nul";
+        }
+
+        return "2>/dev/null";
+    }
+
+    /**
      * Executes the given command.
      *
      * @param  string  $binary
@@ -221,6 +235,6 @@ class Snipe
      */
     protected function execute($binary, $command)
     {
-        exec("{$this->getBinaryPath($binary)} $command");
+        exec("{$this->getBinaryPath($binary)} $command {$this->getOutputRedirection()}");
     }
 }
