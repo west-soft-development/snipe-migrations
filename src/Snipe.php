@@ -100,7 +100,7 @@ class Snipe
      */
     protected function seederFileTimeSum()
     {
-        return collect([database_path('seeds')])
+        return collect([$this->getSeederPath()])
             ->map(function ($path) {
                 return collect(File::allFiles($path))
                     ->sum(function ($file) {
@@ -225,6 +225,19 @@ class Snipe
         }
 
         return "2>/dev/null";
+    }
+
+    /**
+     * Get the seeder folder path.
+     * Laravel 8 changed the path to where seeds are stored: https://github.com/laravel/framework/commit/e846de232a4b15eb6e01727bf353b5811adec841
+     *
+     * @return string
+     */
+    protected function getSeederPath(): string
+    {
+        $path = database_path('seeds');
+
+        return is_dir($path) ? $path : database_path('seeders');
     }
 
     /**
